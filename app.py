@@ -14,9 +14,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 from vercel.blob import BlobClient
-from vercel import blob as vercel_blob
-
-blob_delete = getattr(vercel_blob, "del")
 
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -31,7 +28,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev-secret-change-me")
-app.config["MAX_CONTENT_LENGTH"] = 64 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {
     "png", "jpg", "jpeg", "webp", "gif",
@@ -296,15 +293,16 @@ def save_upload(file):
         raise ValueError("The uploaded file is empty.")
 
     try:
-        client = BlobClient()
-        blob = client.put(
-            filename,
-            file_bytes,
-            access="public",
-            content_type=file.mimetype or "application/octet-stream",
-            add_random_suffix=False,
-            multipart=True,
-        )
+        # Vercel's current Python SDK supports synchronous BlobClient usage.
+        # The BLOB_READ_WRITE_TOKEN environment variable is read automatically.
+        with BlobClient() as client:
+            blob = client.put(
+                filename,
+                file_bytes,
+                access="public",
+                content_type=file.mimetype or "application/octet-stream",
+                add_random_suffix=False,
+            )
     except Exception as exc:
         raise ValueError(f"Could not upload the file to Vercel Blob: {exc}") from exc
 
@@ -326,7 +324,9 @@ def delete_local_upload(path):
     # New uploads are stored as public Vercel Blob URLs.
     if "blob.vercel-storage.com" in path:
         try:
-            blob_delete(path)
+            # BlobClient.delete() accepts a list of blob URLs.
+            with BlobClient() as client:
+                client.delete([path])
         except Exception:
             pass
         return
