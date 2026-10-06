@@ -1,0 +1,4 @@
+{% extends "admin/base.html" %}
+{% block admin_content %}
+<div class="empty-admin large-empty"><strong>{{ code }}</strong><span>{{ message }}</span><a class="btn-admin primary" href="{{ url_for('admin_dashboard') }}">Back to dashboard</a></div>
+{% endblock %}

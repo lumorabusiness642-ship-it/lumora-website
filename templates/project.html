@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }} — {{ site.brand_name }}{% endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+<main>
+  <section class="project-detail section">
+    <div class="container">
+      <a class="back-link" href="{{ url_for('portfolio', slug=project.service_slug) }}">← Back to {{ project.service_name }}</a>
+      <div class="project-detail-grid">
+        <div class="project-detail-image reveal">
+          {% if project.file_kind == 'image' and project.file_path %}
+          <img src="{{ url_for('static', filename=project.file_path) }}" alt="{{ project.title }}">
+          {% elif project.file_kind == 'video' and project.file_path %}
+          <video controls playsinline preload="metadata"><source src="{{ url_for('static', filename=project.file_path) }}"></video>
+          {% elif project.file_kind == 'audio' and project.file_path %}
+          <div class="file-preview-card"><span>Audio portfolio file</span><audio controls><source src="{{ url_for('static', filename=project.file_path) }}"></audio></div>
+          {% else %}
+          <div class="file-preview-card"><span class="file-type">{{ (project.file_kind or 'file')|upper }}</span><strong>{{ project.file_name or 'Portfolio file' }}</strong><p>This project contains a downloadable portfolio file.</p><a class="btn btn-primary" href="{{ url_for('portfolio_file', project_id=project.id) }}">Download file ↓</a></div>
+          {% endif %}
+        </div>
+        <div class="project-detail-copy reveal">
+          <div class="eyebrow"><span></span>{{ project.service_name }}</div>
+          <h1>{{ project.title }}</h1>
+          <p>{{ project.description }}</p>
+          {% if project.project_url %}
+          <a class="btn btn-primary" href="{{ project.project_url }}" target="_blank" rel="noreferrer">Open project ↗</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

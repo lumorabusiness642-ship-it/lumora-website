@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ site.brand_name }} — {{ site.tagline }}{% endblock %}</title>
+  <meta name="description" content="{{ site.site_description }}">
+  <meta name="keywords" content="{{ site.meta_keywords }}">
+  <link rel="icon" href="{{ url_for('static', filename=(site.logo_path or 'img/logo.png')) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  {% block content %}{% endblock %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="public-flashes" aria-live="polite">
+      {% for category, message in messages %}
+        <div class="public-flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <div class="privacy-note">{{ site.analytics_notice }}</div>
+
+  <a class="whatsapp-float" href="https://wa.me/{{ site.whatsapp_number|digits }}?text=Hello%20LUMORA%2C%20I%27d%20like%20to%20discuss%20a%20project." target="_blank" rel="noopener" aria-label="Contact LUMORA on WhatsApp">
+    <span class="whatsapp-icon" aria-hidden="true">☎</span><span>WhatsApp</span>
+  </a>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,99 @@
+{% extends "admin/base.html" %}
+{% block title %}Website Content — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head">
+  <div><span class="top-label">Global content</span><h1>Website Content</h1><p>Edit the main copy, contact details and social links.</p></div>
+</div>
+
+<form method="post" enctype="multipart/form-data" class="settings-form">
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Brand</span><h2>Identity</h2></div></div>
+    <div class="form-grid">
+      <label>Brand name<input name="brand_name" value="{{ values.brand_name }}"></label>
+      <label>Tagline<input name="tagline" value="{{ values.tagline }}"></label>
+      <label>Logo upload<input type="file" name="logo_file" accept=".png,.jpg,.jpeg,.webp,.gif"><span class="hint">Upload a new company logo. Leave empty to keep the current one.</span></label>
+      <label>Hero image<input type="file" name="hero_image_file" accept=".png,.jpg,.jpeg,.webp,.gif"><span class="hint">Optional image shown in the homepage hero.</span></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Home</span><h2>Hero section</h2></div></div>
+    <div class="form-grid">
+      <label class="full">Hero title<textarea name="hero_title" rows="3">{{ values.hero_title }}</textarea></label>
+      <label class="full">Hero text<textarea name="hero_text" rows="4">{{ values.hero_text }}</textarea></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Story</span><h2>About section</h2></div></div>
+    <div class="form-grid">
+      <label class="full">About title<input name="about_title" value="{{ values.about_title }}"></label>
+      <label class="full">About text<textarea name="about_text" rows="4">{{ values.about_text }}</textarea></label>
+      <label class="full">About subtext<textarea name="about_subtext" rows="3">{{ values.about_subtext }}</textarea></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Homepage</span><h2>Services & portfolio headings</h2></div></div>
+    <div class="form-grid">
+      <label>Services title<input name="services_title" value="{{ values.services_title }}"></label>
+      <label>Portfolio title<input name="portfolio_title" value="{{ values.portfolio_title }}"></label>
+      <label class="full">Services text<textarea name="services_text" rows="3">{{ values.services_text }}</textarea></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Workflow</span><h2>Process section</h2></div></div>
+    <div class="form-grid">
+      <label>Process title<input name="process_title" value="{{ values.process_title }}"></label>
+      <label>Process text<textarea name="process_text" rows="3">{{ values.process_text }}</textarea></label>
+      {% for i in range(1,5) %}
+      <label>Step {{ i }} title<input name="process_{{ i }}_title" value="{{ values['process_' ~ i ~ '_title'] }}"></label>
+      <label>Step {{ i }} text<input name="process_{{ i }}_text" value="{{ values['process_' ~ i ~ '_text'] }}"></label>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Conversion</span><h2>Call to action</h2></div></div>
+    <div class="form-grid">
+      <label>CTA title<input name="cta_title" value="{{ values.cta_title }}"></label>
+      <label>CTA text<textarea name="cta_text" rows="3">{{ values.cta_text }}</textarea></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Contact</span><h2>Contact details</h2></div></div>
+    <div class="form-grid">
+      <label>Email<input type="email" name="email" value="{{ values.email }}"></label>
+      <label>Phone<input name="phone" value="{{ values.phone }}"></label>
+      <label>WhatsApp number<input name="whatsapp_number" value="{{ values.whatsapp_number }}" placeholder="+923001234567"><span class="hint">Use country code. This powers the floating WhatsApp button.</span></label>
+      <label class="full">Address<input name="address" value="{{ values.address }}"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Social</span><h2>Social links</h2></div></div>
+    <div class="form-grid">
+      <label>Facebook URL<input name="facebook" value="{{ values.facebook }}"></label>
+      <label>Instagram URL<input name="instagram" value="{{ values.instagram }}"></label>
+      <label>LinkedIn URL<input name="linkedin" value="{{ values.linkedin }}"></label>
+      <label>Behance URL<input name="behance" value="{{ values.behance }}"></label>
+      <label>YouTube URL<input name="youtube" value="{{ values.youtube }}"></label>
+      <label>TikTok URL<input name="tiktok" value="{{ values.tiktok }}"></label>
+      <label>X / Twitter URL<input name="x" value="{{ values.x }}"></label>
+      <label class="full">Footer text<input name="footer_text" value="{{ values.footer_text }}"></label>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Search & browser</span><h2>SEO settings</h2></div></div>
+    <div class="form-grid">
+      <label class="full">Site description<textarea name="site_description" rows="3">{{ values.site_description }}</textarea></label>
+      <label class="full">Meta keywords<input name="meta_keywords" value="{{ values.meta_keywords }}"></label>
+    </div>
+  </section>
+
+  <div class="sticky-save"><button class="btn-admin primary" type="submit">Save website changes</button></div>
+</form>
+{% endblock %}

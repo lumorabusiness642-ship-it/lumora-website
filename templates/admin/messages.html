@@ -1,0 +1,39 @@
+{% extends "admin/base.html" %}
+{% block title %}Messages — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head">
+  <div><span class="top-label">Contact inbox</span><h1>Messages</h1><p>Messages submitted through the website contact form.</p></div>
+  <a class="btn-admin secondary" href="{{ url_for('home') }}#contact" target="_blank">View contact form ↗</a>
+</div>
+
+{% if messages %}
+<div class="message-list">
+  {% for message in messages %}
+  <article class="message-card {% if not message.is_read %}unread{% endif %}">
+    <div class="message-card-top">
+      <div>
+        <span class="message-status">{% if message.is_read %}Read{% else %}New{% endif %}</span>
+        <h2>{{ message.name or 'Website visitor' }}</h2>
+        <small>{{ message.created_at }}</small>
+      </div>
+      <div class="message-actions">
+        {% if message.is_read %}
+        <form method="post" action="{{ url_for('mark_message_unread', message_id=message.id) }}"><button class="btn-admin secondary" type="submit">Mark unread</button></form>
+        {% else %}
+        <form method="post" action="{{ url_for('mark_message_read', message_id=message.id) }}"><button class="btn-admin secondary" type="submit">Mark read</button></form>
+        {% endif %}
+        <form method="post" action="{{ url_for('delete_message', message_id=message.id) }}" onsubmit="return confirm('Delete this message?');"><button class="danger-btn" type="submit">Delete</button></form>
+      </div>
+    </div>
+    <div class="message-contact-grid">
+      <a href="tel:{{ message.phone|digits }}"><span>Phone</span>{{ message.phone }}</a>
+      <a href="mailto:{{ message.email }}"><span>Email</span>{{ message.email }}</a>
+    </div>
+    <div class="message-body"><span>Message</span><p>{{ message.message }}</p></div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<section class="panel large-empty"><strong>No messages yet</strong><span>Website inquiries will appear here automatically.</span></section>
+{% endif %}
+{% endblock %}

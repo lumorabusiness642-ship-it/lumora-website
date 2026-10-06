@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}Services — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head">
+  <div><span class="top-label">Portfolio structure</span><h1>Services</h1><p>Each service has its own portfolio page.</p></div>
+</div>
+
+<section class="panel">
+  <div class="panel-head"><div><span class="top-label">Add category</span><h2>New service</h2></div></div>
+  <form method="post" class="form-grid">
+    <label>Name<input name="name" required placeholder="Video Editing"></label>
+    <label>Number<input name="number" placeholder="05"></label>
+    <label>Icon key<input name="icon" placeholder="video"></label>
+    <label class="full">Description<textarea name="description" rows="3" required></textarea></label>
+    <div><button class="btn-admin primary" type="submit">Add service</button></div>
+  </form>
+</section>
+
+<div class="service-admin-grid">
+{% for service in services %}
+<section class="panel">
+  <div class="service-admin-head"><span class="number">{{ service.number }}</span><div><strong>{{ service.name }}</strong><small>/{{ service.slug }}</small></div></div>
+  <form method="post" action="{{ url_for('edit_service', service_id=service.id) }}" class="form-stack compact">
+    <label>Name<input name="name" value="{{ service.name }}" required></label>
+    <label>Description<textarea name="description" rows="3" required>{{ service.description }}</textarea></label>
+    <div class="form-grid">
+      <label>Number<input name="number" value="{{ service.number }}"></label>
+      <label>Icon<input name="icon" value="{{ service.icon }}"></label>
+    </div>
+    <button class="btn-admin secondary" type="submit">Save service</button>
+  </form>
+  <form method="post" action="{{ url_for('delete_service', service_id=service.id) }}" onsubmit="return confirm('Delete this service? It must have no projects.')">
+    <button class="danger-link" type="submit">Delete service</button>
+  </form>
+</section>
+{% endfor %}
+</div>
+{% endblock %}

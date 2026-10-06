@@ -1,0 +1,24 @@
+{% extends "admin/base.html" %}
+{% block title %}Visitor Analytics — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head"><div><span class="top-label">Visitor intelligence</span><h1>Website activity</h1><p>Public-site visits and interactions recorded by LUMORA.</p></div><form method="post" action="{{ url_for('clear_analytics') }}" onsubmit="return confirm('Delete all visitor analytics?');"><button class="btn-admin" type="submit">Clear analytics</button></form></div>
+
+<div class="stat-grid">
+  <div class="stat-card"><span>Unique Visitors</span><strong>{{ unique_visitors['c'] }}</strong><small>Anonymous browser IDs</small></div>
+  <div class="stat-card"><span>Page Views</span><strong>{{ page_views['c'] }}</strong><small>Public page visits</small></div>
+  <div class="stat-card"><span>Interactions</span><strong>{{ interactions['c'] }}</strong><small>Clicks and tracked actions</small></div>
+</div>
+
+<div class="admin-grid-two">
+<section class="panel"><div class="panel-head"><div><span class="top-label">Recent activity</span><h2>Visitor actions</h2></div></div>
+{% if recent_events %}<div class="table-wrap"><table><thead><tr><th>Time</th><th>Visitor</th><th>Action</th><th>Page</th><th>IP</th></tr></thead><tbody>
+{% for e in recent_events %}<tr><td>{{ e.created_at }}</td><td><code>{{ e.visitor_id[:10] }}</code></td><td><strong>{{ e.event_type }}</strong><br><small>{{ e.target }}</small></td><td>{{ e.path }}</td><td>{{ e.ip_address }}</td></tr>{% endfor %}
+</tbody></table></div>{% else %}<div class="empty-admin">No visitor activity yet.</div>{% endif %}</section>
+
+<section>
+<div class="panel"><div class="panel-head"><div><span class="top-label">Most viewed</span><h2>Popular pages</h2></div></div>{% for p in popular_pages %}<div class="quick-link"><div><strong>{{ p.path }}</strong><small>{{ p.views }} views</small></div></div>{% else %}<div class="empty-admin">No page views yet.</div>{% endfor %}</div>
+<div class="panel"><div class="panel-head"><div><span class="top-label">Visitors</span><h2>Recent visitors</h2></div></div>{% for v in recent_visitors %}<div class="visitor-row"><strong>{{ v.visitor_id[:12] }}</strong><span>{{ v.last_seen }} · {{ v.actions }} actions</span><small>{{ v.ip_address }}</small><small title="{{ v.user_agent }}">{{ v.user_agent[:90] }}</small></div>{% else %}<div class="empty-admin">No visitors yet.</div>{% endfor %}</div>
+</section></div>
+
+<div class="panel"><div class="panel-head"><div><span class="top-label">Privacy</span><h2>What LUMORA can and cannot collect</h2></div></div><p class="analytics-help">The system can record page visits, project/portfolio views, WhatsApp/email clicks, referrer, browser user-agent, IP address, time, and an anonymous visitor ID. It <strong>cannot automatically discover a visitor's name, email address or phone number from a normal browser visit</strong>. Those contact details are only available when the visitor voluntarily submits the contact form (or uses an external service such as WhatsApp/email, where that service handles the conversation).</p></div>
+{% endblock %}

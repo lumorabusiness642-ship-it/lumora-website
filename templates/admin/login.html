@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login — LUMORA</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <img src="{{ url_for('static', filename='img/logo.png') }}" alt="LUMORA">
+    <span class="top-label">Private access</span>
+    <h1>Admin Studio</h1>
+    <p>Manage your website, services and portfolio from one place.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    <form method="post" class="form-stack">
+      <label>Username<input name="username" required autocomplete="username"></label>
+      <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
+      <button class="btn-admin primary" type="submit">Sign in →</button>
+    </form>
+    <a class="login-back" href="{{ url_for('home') }}">← Back to website</a>
+  </div>
+</body>
+</html>

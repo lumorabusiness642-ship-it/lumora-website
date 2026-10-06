@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block content %}
+{% include "partials/navbar.html" %}
+<section class="section error-page">
+  <div class="container empty-state">
+    <span class="empty-icon">{{ code }}</span>
+    <h1>{{ message }}</h1>
+    <a class="btn btn-primary" href="{{ url_for('home') }}">Go home</a>
+  </div>
+</section>
+{% endblock %}

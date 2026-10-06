@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin — {{ site.brand_name }}{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename=(site.logo_path or 'img/logo.png')) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="sidebar" id="adminSidebar">
+      <a class="admin-brand" href="{{ url_for('admin_dashboard') }}">
+        <img src="{{ url_for('static', filename=(site.logo_path or 'img/logo.png')) }}" alt="{{ site.brand_name }}">
+        <div><strong>{{ site.brand_name }}</strong><span>Admin Studio</span></div>
+      </a>
+      <nav class="side-nav">
+        <a href="{{ url_for('admin_dashboard') }}">⌂ <span>Dashboard</span></a>
+        <a href="{{ url_for('admin_settings') }}">◌ <span>Website Content</span></a>
+        <a href="{{ url_for('admin_services') }}">✦ <span>Services</span></a>
+        <a href="{{ url_for('admin_projects') }}">▦ <span>Projects</span></a>
+        <a href="{{ url_for('admin_messages') }}">✉ <span>Messages</span></a>
+        <a href="{{ url_for('admin_analytics') }}">◉ <span>Visitor Analytics</span></a>
+        <a href="{{ url_for('admin_password') }}">⚿ <span>Password</span></a>
+        <a href="{{ url_for('home') }}" target="_blank">↗ <span>View Website</span></a>
+      </nav>
+      <a class="logout" href="{{ url_for('admin_logout') }}">↪ Logout</a>
+    </aside>
+
+    <div class="admin-main">
+      <header class="admin-topbar">
+        <button class="admin-menu" id="adminMenu">☰</button>
+        <div>
+          <span class="top-label">Control center</span>
+          <strong>Website management</strong>
+        </div>
+        <div class="admin-user">● {{ current_admin }}</div>
+      </header>
+
+      <div class="admin-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        {% endwith %}
+        {% block admin_content %}{% endblock %}
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

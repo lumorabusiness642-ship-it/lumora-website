@@ -1,0 +1,38 @@
+{% extends "admin/base.html" %}
+{% block title %}{% if project %}Edit{% else %}New{% endif %} Project — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head">
+  <div><span class="top-label">Portfolio editor</span><h1>{% if project %}Edit project{% else %}New project{% endif %}</h1><p>Everything you add here can appear publicly on the portfolio.</p></div>
+  <a class="btn-admin secondary" href="{{ url_for('admin_projects') }}">← Back</a>
+</div>
+
+<section class="panel form-panel">
+<form method="post" enctype="multipart/form-data" class="form-grid">
+  <label class="full">Project title<input name="title" value="{{ project.title if project else '' }}" required placeholder="Brand Identity — Lumora"></label>
+  <label>Service
+    <select name="service_id" required>
+      {% for service in services %}
+      <option value="{{ service.id }}" {% if project and project.service_id == service.id %}selected{% endif %}>{{ service.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Project URL <span class="hint">(optional)</span><input type="url" name="project_url" value="{{ project.project_url if project else '' }}" placeholder="https://..."></label>
+  <label class="full">Description<textarea name="description" rows="6" placeholder="Describe the project, deliverables and result.">{{ project.description if project else '' }}</textarea></label>
+  <label class="full upload-box">Portfolio file
+    <input type="file" name="portfolio_file" accept=".png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov,.avi,.mkv,.mp3,.wav,.ogg,.m4a,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z">
+    <small>Maximum 64 MB. Images, video, audio, PDF, Office files, text/CSV and ZIP/RAR/7Z are supported. The file is stored in your portfolio and shown/downloadable on the project page.</small>
+    {% if project and project.file_path %}
+      <div class="current-file"><strong>Current file:</strong> {{ project.file_name or project.file_path }} <span class="pill">{{ project.file_kind or 'file' }}</span></div>
+      {% if project.file_kind == 'image' %}<img class="upload-preview" src="{{ url_for('static', filename=project.file_path) }}" alt="Current project file">{% endif %}
+    {% elif project and project.image %}
+      <img class="upload-preview" src="{{ url_for('static', filename=project.image) }}" alt="Current image">
+    {% endif %}
+  </label>
+  <label class="check-row"><input type="checkbox" name="featured" {% if project and project.featured %}checked{% endif %}> Show this project in the homepage featured portfolio</label>
+  <div class="form-actions full">
+    <button class="btn-admin primary" type="submit">{% if project %}Save changes{% else %}Publish project{% endif %}</button>
+    <a class="btn-admin secondary" href="{{ url_for('admin_projects') }}">Cancel</a>
+  </div>
+</form>
+</section>
+{% endblock %}

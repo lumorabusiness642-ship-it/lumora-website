@@ -1,0 +1,43 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard — {{ site.brand_name }}{% endblock %}
+{% block admin_content %}
+<div class="page-head">
+  <div><span class="top-label">Overview</span><h1>Good to see you.</h1><p>Manage the public website from this control center.</p></div>
+  <a class="btn-admin primary" href="{{ url_for('new_project') }}">+ New project</a>
+</div>
+
+<div class="stat-grid stat-grid-five">
+  <div class="stat-card"><span>Projects</span><strong>{{ stats.projects }}</strong><small>Published portfolio items</small></div>
+  <div class="stat-card"><span>Services</span><strong>{{ stats.services }}</strong><small>Service categories</small></div>
+  <div class="stat-card"><span>Messages</span><strong>{{ stats.messages }}</strong><small>{{ stats.unread_messages }} unread inquiries</small></div>
+  <div class="stat-card"><span>Page Views</span><strong>{{ stats.visits }}</strong><small>Total public page views</small></div>
+  <div class="stat-card"><span>Visitors</span><strong>{{ stats.visitors }}</strong><small>Unique browser visitors</small></div>
+</div>
+
+<div class="admin-grid-two">
+  <section class="panel">
+    <div class="panel-head"><div><span class="top-label">Recent work</span><h2>Latest projects</h2></div><a href="{{ url_for('admin_projects') }}">Manage all →</a></div>
+    {% if recent %}
+    <div class="table-wrap"><table>
+      <thead><tr><th>Project</th><th>Service</th><th>Featured</th><th></th></tr></thead>
+      <tbody>
+      {% for p in recent %}
+        <tr><td><strong>{{ p.title }}</strong></td><td>{{ p.service_name }}</td><td>{% if p.featured %}<span class="pill">Featured</span>{% else %}—{% endif %}</td><td><a class="table-action" href="{{ url_for('edit_project', project_id=p.id) }}">Edit</a></td></tr>
+      {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+      <div class="empty-admin">No projects yet. Add your first project to populate the portfolio.</div>
+    {% endif %}
+  </section>
+
+  <section class="panel quick-panel">
+    <div class="panel-head"><div><span class="top-label">Quick edit</span><h2>Website</h2></div></div>
+    <a class="quick-link" href="{{ url_for('admin_settings') }}"><span>✦</span><div><strong>Edit website content</strong><small>Hero, about, contact and social links</small></div><b>→</b></a>
+    <a class="quick-link" href="{{ url_for('admin_services') }}"><span>◌</span><div><strong>Manage services</strong><small>Add, edit or remove service categories</small></div><b>→</b></a>
+    <a class="quick-link" href="{{ url_for('admin_projects') }}"><span>▦</span><div><strong>Manage portfolio</strong><small>Upload and edit project cards</small></div><b>→</b></a>
+    <a class="quick-link" href="{{ url_for('admin_messages') }}"><span>✉</span><div><strong>View messages</strong><small>See phone, email and project inquiries</small></div><b>→</b></a>
+    <a class="quick-link" href="{{ url_for('admin_analytics') }}"><span>◉</span><div><strong>Visitor analytics</strong><small>See visits, pages, clicks and visitor details</small></div><b>→</b></a>
+  </section>
+</div>
+{% endblock %}

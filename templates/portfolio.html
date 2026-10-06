@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }} — {{ site.brand_name }}{% endblock %}
+
+{% block content %}
+{% include "partials/navbar.html" %}
+<main>
+  <section class="inner-hero section">
+    <div class="container">
+      <a class="back-link" href="{{ url_for('home') }}#services">← Back to services</a>
+      <div class="eyebrow"><span></span>{{ service.number }} / Service portfolio</div>
+      <h1>{{ service.name }}</h1>
+      <p>{{ service.description }}</p>
+    </div>
+  </section>
+
+  <section class="section section-soft">
+    <div class="container">
+      <div class="portfolio-head">
+        <div class="section-heading">
+          <h2>{{ projects|length }} project{% if projects|length != 1 %}s{% endif %}</h2>
+          <p>Explore the work created under {{ service.name }}.</p>
+        </div>
+      </div>
+
+      {% if projects %}
+      <div class="project-grid">
+        {% for project in projects %}
+        <a class="project-card tilt-card reveal" href="{{ url_for('project_detail', project_id=project.id) }}">
+          <div class="project-image">
+            {% if project.file_kind == 'image' and project.file_path %}
+              <img src="{{ url_for('static', filename=project.file_path) }}" alt="{{ project.title }}">
+            {% elif project.file_kind %}
+              <div class="image-placeholder"><span>{{ project.file_kind|upper }}<br>{{ project.file_name or 'Portfolio file' }}</span></div>
+            {% else %}
+              <div class="image-placeholder"><span>{{ service.name }}</span></div>
+            {% endif %}
+            {% if project.featured %}<span class="project-badge">Featured</span>{% endif %}
+          </div>
+          <div class="project-info">
+            <h3>{{ project.title }}</h3>
+            <p>{{ project.description }}</p>
+            <span class="card-link">View details <b>→</b></span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <span class="empty-icon">✦</span>
+        <h3>No projects yet.</h3>
+        <p>Use the admin dashboard to add the first project for this service.</p>
+      </div>
+      {% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}
