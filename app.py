@@ -14,8 +14,14 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
 
 BASE_DIR = Path(__file__).resolve().parent
-DB_PATH = BASE_DIR / "lumora.db"
-UPLOAD_DIR = Path("/tmp/uploads")
+
+# Vercel's deployed filesystem is read-only.
+# /tmp is writable during a serverless function invocation.
+DATA_DIR = Path("/tmp/lumora_data")
+DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_PATH = DATA_DIR / "lumora.db"
+UPLOAD_DIR = DATA_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
@@ -85,7 +91,7 @@ DEFAULT_SERVICES = [
 
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, timeout=10)
         g.db.row_factory = sqlite3.Row
     return g.db
 
@@ -98,7 +104,7 @@ def close_db(_error=None):
 
 
 def init_db():
-    db = sqlite3.connect(DB_PATH)
+    db = sqlite3.connect(DB_PATH, timeout=10)
     db.row_factory = sqlite3.Row
     db.executescript("""
         CREATE TABLE IF NOT EXISTS settings (
@@ -290,7 +296,9 @@ def save_upload(file):
 def delete_local_upload(path):
     if not path or not path.startswith("uploads/"):
         return
-    target = BASE_DIR / "static" / path
+
+    filename = Path(path).name
+    target = UPLOAD_DIR / filename
     if target.exists():
         try:
             target.unlink()
@@ -415,7 +423,7 @@ def portfolio(slug):
     ).fetchone()
     if not service:
         abort(404)
-    record_event("portfolio_view", f"service:{service["slug"]}", {"service": service["name"]})
+    record_event("portfolio_view", f"service:{service['slug']}", {"service": service["name"]})
     projects = db.execute("""
         SELECT p.*, s.name AS service_name
         FROM projects p
