@@ -1,5 +1,5 @@
 import os
-import sqlite3
+import psycopg
 import re
 from functools import wraps
 from pathlib import Path
@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = Path("/tmp/lumora_data")
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-DB_PATH = DATA_DIR / "lumora.db"
+# Temporary directory is only used for legacy local files. Project records live in Neon.
 UPLOAD_DIR = DATA_DIR / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -91,10 +91,58 @@ DEFAULT_SERVICES = [
 ]
 
 
+def database_url():
+    """Return the persistent Neon/PostgreSQL connection URL."""
+    return (
+        os.getenv("NEON_URL")
+        or os.getenv("NEON_DATABASE_URL")
+        or os.getenv("DATABASE_URL")
+        or os.getenv("POSTGRES_URL")
+        or os.getenv("POSTGRES_PRISMA_URL")
+    )
+
+
+class Database:
+    """Small compatibility wrapper so the existing app can keep using ? placeholders."""
+
+    def __init__(self, connection):
+        self.connection = connection
+
+    def execute(self, query, params=None):
+        # sqlite used ? placeholders; psycopg uses %s.
+        query = query.replace("?", "%s")
+        if params is None:
+            return self.connection.execute(query)
+        return self.connection.execute(query, params)
+
+    def commit(self):
+        self.connection.commit()
+
+    def rollback(self):
+        self.connection.rollback()
+
+    def close(self):
+        self.connection.close()
+
+
+def connect_database():
+    url = database_url()
+    if not url:
+        raise RuntimeError(
+            "Neon database connection is missing. Set the Vercel environment variable "
+            "NEON_URL (or NEON_DATABASE_URL / DATABASE_URL)."
+        )
+
+    import psycopg
+    from psycopg.rows import dict_row
+
+    connection = psycopg.connect(url, connect_timeout=10, row_factory=dict_row)
+    return Database(connection)
+
+
 def get_db():
     if "db" not in g:
-        g.db = sqlite3.connect(DB_PATH, timeout=10)
-        g.db.row_factory = sqlite3.Row
+        g.db = connect_database()
     return g.db
 
 
@@ -106,109 +154,126 @@ def close_db(_error=None):
 
 
 def init_db():
-    db = sqlite3.connect(DB_PATH, timeout=10)
-    db.row_factory = sqlite3.Row
-    db.executescript("""
-        CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT NOT NULL DEFAULT ''
-        );
+    """Create the persistent Neon/PostgreSQL schema and seed defaults."""
+    db = connect_database()
+    try:
+        statements = [
+            """
+            CREATE TABLE IF NOT EXISTS settings (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL DEFAULT ''
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS services (
+                id BIGSERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                description TEXT NOT NULL,
+                icon TEXT NOT NULL DEFAULT 'spark',
+                number TEXT NOT NULL DEFAULT '01',
+                slug TEXT UNIQUE NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS projects (
+                id BIGSERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL DEFAULT '',
+                service_id BIGINT NOT NULL,
+                image TEXT NOT NULL DEFAULT '',
+                file_path TEXT NOT NULL DEFAULT '',
+                file_name TEXT NOT NULL DEFAULT '',
+                file_kind TEXT NOT NULL DEFAULT 'file',
+                project_url TEXT NOT NULL DEFAULT '',
+                featured INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(service_id) REFERENCES services(id) ON DELETE CASCADE
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS contact_messages (
+                id BIGSERIAL PRIMARY KEY,
+                name TEXT NOT NULL DEFAULT '',
+                phone TEXT NOT NULL,
+                email TEXT NOT NULL,
+                message TEXT NOT NULL,
+                visitor_id TEXT NOT NULL DEFAULT '',
+                is_read INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS admins (
+                id BIGSERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS visitor_events (
+                id BIGSERIAL PRIMARY KEY,
+                visitor_id TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                path TEXT NOT NULL DEFAULT '',
+                target TEXT NOT NULL DEFAULT '',
+                metadata TEXT NOT NULL DEFAULT '{}',
+                ip_address TEXT NOT NULL DEFAULT '',
+                user_agent TEXT NOT NULL DEFAULT '',
+                referrer TEXT NOT NULL DEFAULT '',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """,
+            "CREATE INDEX IF NOT EXISTS idx_visitor_events_created ON visitor_events(created_at DESC)",
+            "CREATE INDEX IF NOT EXISTS idx_visitor_events_visitor ON visitor_events(visitor_id)",
+            "ALTER TABLE contact_messages ADD COLUMN IF NOT EXISTS visitor_id TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE projects ADD COLUMN IF NOT EXISTS file_path TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE projects ADD COLUMN IF NOT EXISTS file_name TEXT NOT NULL DEFAULT ''",
+            "ALTER TABLE projects ADD COLUMN IF NOT EXISTS file_kind TEXT NOT NULL DEFAULT 'file'",
+        ]
 
-        CREATE TABLE IF NOT EXISTS services (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            description TEXT NOT NULL,
-            icon TEXT NOT NULL DEFAULT 'spark',
-            number TEXT NOT NULL DEFAULT '01',
-            slug TEXT UNIQUE NOT NULL
-        );
+        for statement in statements:
+            db.execute(statement)
 
-        CREATE TABLE IF NOT EXISTS projects (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            title TEXT NOT NULL,
-            description TEXT NOT NULL DEFAULT '',
-            service_id INTEGER NOT NULL,
-            image TEXT NOT NULL DEFAULT '',
-            project_url TEXT NOT NULL DEFAULT '',
-            featured INTEGER NOT NULL DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY(service_id) REFERENCES services(id) ON DELETE CASCADE
-        );
-
-        CREATE TABLE IF NOT EXISTS contact_messages (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL DEFAULT '',
-            phone TEXT NOT NULL,
-            email TEXT NOT NULL,
-            message TEXT NOT NULL,
-            visitor_id TEXT NOT NULL DEFAULT '',
-            is_read INTEGER NOT NULL DEFAULT 0,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-
-        CREATE TABLE IF NOT EXISTS admins (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL
-        );
-
-        CREATE TABLE IF NOT EXISTS visitor_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            visitor_id TEXT NOT NULL,
-            event_type TEXT NOT NULL,
-            path TEXT NOT NULL DEFAULT '',
-            target TEXT NOT NULL DEFAULT '',
-            metadata TEXT NOT NULL DEFAULT '{}',
-            ip_address TEXT NOT NULL DEFAULT '',
-            user_agent TEXT NOT NULL DEFAULT '',
-            referrer TEXT NOT NULL DEFAULT '',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-        CREATE INDEX IF NOT EXISTS idx_visitor_events_created ON visitor_events(created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_visitor_events_visitor ON visitor_events(visitor_id);
-    """)
-
-    # Lightweight migrations for databases created by older LUMORA versions.
-    message_columns = {row[1] for row in db.execute("PRAGMA table_info(contact_messages)").fetchall()}
-    if "visitor_id" not in message_columns:
-        db.execute("ALTER TABLE contact_messages ADD COLUMN visitor_id TEXT NOT NULL DEFAULT ''")
-
-    columns = {row[1] for row in db.execute("PRAGMA table_info(projects)").fetchall()}
-    for name, definition in (("file_path", "TEXT NOT NULL DEFAULT ''"), ("file_name", "TEXT NOT NULL DEFAULT ''"), ("file_kind", "TEXT NOT NULL DEFAULT 'file'")):
-        if name not in columns:
-            db.execute(f"ALTER TABLE projects ADD COLUMN {name} {definition}")
-
-    # Backfill portfolio metadata for projects created before the multi-file uploader.
-    db.execute("UPDATE projects SET file_path = image, file_kind = 'image', file_name = substr(image, instr(image, '/') + 1) WHERE (file_path = '' OR file_path IS NULL) AND image <> ''")
-
-    for key, value in DEFAULT_SETTINGS.items():
+        # Backfill portfolio metadata for any older project rows.
         db.execute(
-            "INSERT OR IGNORE INTO settings(key, value) VALUES (?, ?)",
-            (key, value)
+            """
+            UPDATE projects
+            SET file_path = image,
+                file_kind = 'image',
+                file_name = split_part(image, '/', array_length(string_to_array(image, '/'), 1))
+            WHERE (file_path = '' OR file_path IS NULL) AND image <> ''
+            """
         )
 
-    existing = db.execute("SELECT COUNT(*) AS c FROM services").fetchone()["c"]
-    if existing == 0:
+        for key, value in DEFAULT_SETTINGS.items():
+            db.execute(
+                "INSERT INTO settings(key, value) VALUES (?, ?) "
+                "ON CONFLICT(key) DO NOTHING",
+                (key, value)
+            )
+
         for name, desc, icon, number in DEFAULT_SERVICES:
             slug = slugify(name)
             db.execute(
-                "INSERT INTO services(name, description, icon, number, slug) VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO services(name, description, icon, number, slug) VALUES (?, ?, ?, ?, ?) "
+                "ON CONFLICT(slug) DO NOTHING",
                 (name, desc, icon, number, slug)
             )
 
-    admin_username = os.getenv("ADMIN_USERNAME", "admin")
-    admin_password = os.getenv("ADMIN_PASSWORD", "ChangeMe123!")
-    admin = db.execute(
-        "SELECT id FROM admins WHERE username = ?", (admin_username,)
-    ).fetchone()
-    if not admin:
+        admin_username = os.getenv("ADMIN_USERNAME", "admin")
+        admin_password = os.getenv("ADMIN_PASSWORD", "ChangeMe123!")
         db.execute(
-            "INSERT INTO admins(username, password_hash) VALUES (?, ?)",
+            "INSERT INTO admins(username, password_hash) VALUES (?, ?) "
+            "ON CONFLICT(username) DO NOTHING",
             (admin_username, generate_password_hash(admin_password))
         )
 
-    db.commit()
-    db.close()
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
 
 
 def slugify(value):
@@ -640,7 +705,7 @@ def admin_services():
                 )
                 db.commit()
                 flash("Service added.", "success")
-            except sqlite3.IntegrityError:
+            except psycopg.IntegrityError:
                 flash("A service with that name already exists.", "error")
         return redirect(url_for("admin_services"))
 
@@ -671,7 +736,7 @@ def edit_service(service_id):
             """, (name, description, icon, number, new_slug, service_id))
             db.commit()
             flash("Service updated.", "success")
-        except sqlite3.IntegrityError:
+        except psycopg.IntegrityError:
             flash("Another service already uses that name.", "error")
     return redirect(url_for("admin_services"))
 
