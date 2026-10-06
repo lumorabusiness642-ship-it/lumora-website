@@ -15,7 +15,7 @@ from werkzeug.utils import secure_filename
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = BASE_DIR / "lumora.db"
-UPLOAD_DIR = BASE_DIR / "static" / "uploads"
+UPLOAD_DIR = Path("/tmp/uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
