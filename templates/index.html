@@ -1,4 +1,11 @@
-{% extends "base.html" %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello, World!</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+     {% extends "base.html" %}
 {% block title %}{{ site.brand_name }} — {{ site.tagline }}{% endblock %}
 
 {% block content %}
@@ -548,3 +555,6 @@
 </footer>
 
 {% endblock %}
+
+  </body>
+</html>
